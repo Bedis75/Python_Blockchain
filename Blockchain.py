@@ -1,4 +1,6 @@
 import time
+
+import ecdsa
 from Block import Block
 
 
@@ -19,10 +21,23 @@ class Blockchain:
         new_block.transactions = new_block.transactions.copy()
         new_block.mine_block(self.difficulty)
         self.chain.append(new_block)
+        
+    def verify_transaction(self, transaction):
+        message = transaction.sender_public_key + transaction.recipient_address.encode() + str(transaction.amount).encode() + transaction.timestamp.encode()
+        try:
+            vk = ecdsa.VerifyingKey.from_string(transaction.sender_public_key[1:], curve=ecdsa.SECP256k1)  # skip 0x04
+            return vk.verify(transaction.signature, message)
+        except Exception as e:
+            print(f"Verification error: {e}")
+            return False
+
     def add_transaction(self, transaction):
-        self.pending_transactions.append(transaction)
-        if len(self.pending_transactions) >= 5:
-            self.mine_pending_transactions()
+        if self.verify_transaction(transaction):
+            self.pending_transactions.append(transaction)
+            if len(self.pending_transactions) >= 5:
+                self.mine_pending_transactions()
+        else:
+            print("❌ Invalid transaction signature")
 
     def mine_pending_transactions(self):
         print(f"Mining block {len(self.chain)}...")

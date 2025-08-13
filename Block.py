@@ -11,7 +11,9 @@ class Block:
         self.hash = self.calculate_hash()
 
     def calculate_hash(self):
-        block_string = f"{self.index}{self.previous_hash}{self.timestamp}{self.data}{self.nonce}{self.transactions}".encode()
+        # include tx ids for stability
+        tx_ids_concat = ''.join([tx.tx_id for tx in self.transactions])
+        block_string = f"{self.index}{self.previous_hash}{self.timestamp}{self.data}{self.nonce}{tx_ids_concat}".encode()
         return hashlib.sha256(block_string).hexdigest()
 
     def mine_block(self, difficulty):
